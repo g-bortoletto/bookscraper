@@ -1,0 +1,5 @@
+<Project>
+    <PropertyGroup>
+        <OutDir>$(SolutionDir)bin</OutDir>
+    </PropertyGroup>
+</Project>
