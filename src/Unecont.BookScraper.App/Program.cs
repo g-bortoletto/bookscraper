@@ -74,13 +74,13 @@ internal static class Program
             using var response = await client.PostBooksAsync(books);
             var status = response.StatusCode;
             var sample = string.Join(
-                " | ",
+                "\n    - ",
                 books.BookList.Take(5).Select(b => $"{b.Title} ({b.Price})")
             );
             if (response.IsSuccessStatusCode)
             {
                 logger.Information(
-                    "POST to https://httpbin.org/post returned {StatusCode}. Sent {Count} books. Sample: {Sample}",
+                    "POST to https://httpbin.org/post returned {StatusCode}. Sent {Count} books. Sample:\n    - {Sample}",
                     status,
                     books.BookList.Count,
                     sample
