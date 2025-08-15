@@ -40,7 +40,7 @@ internal static class Program
                 logger.Warning("No categories configured. Nothing to scrape.");
             }
 
-            var categoriesUrls = BuildCategoriesUrls(categories);
+            var categoriesUrls = PageScraper.BuildCategoriesUrls(categories);
 
             if (categoriesUrls.Length == 0)
             {
@@ -103,16 +103,6 @@ internal static class Program
         {
             await host.StopAsync();
         }
-    }
-
-    private static string[] BuildCategoriesUrls(string[] categories)
-    {
-        return ScrapingHelper
-            .CategoryMap.Where(kvp => categories.Contains(kvp.Key))
-            .Select(kvp =>
-                $"https://books.toscrape.com/catalogue/category/books/{kvp.Value}/index.html"
-            )
-            .ToArray();
     }
 
     private static string[] GetCategories(IConfiguration configuration)

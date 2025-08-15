@@ -46,6 +46,16 @@ public static class PageScraper
             .ToList();
     }
 
+    public static string[] BuildCategoriesUrls(string[] categories)
+    {
+        return ScrapingHelper
+            .CategoryMap.Where(kvp => categories.Contains(kvp.Key))
+            .Select(kvp =>
+                $"https://books.toscrape.com/catalogue/category/books/{kvp.Value}/index.html"
+            )
+            .ToArray();
+    }
+
     private static async Task<HashSet<string>> GetPagesUrls(string pageUrl, ILogger? logger = null)
     {
         logger?.Information("Getting all page URLs starting from: {PageUrl}", pageUrl);
