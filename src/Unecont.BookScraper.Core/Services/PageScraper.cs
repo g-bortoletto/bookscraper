@@ -9,26 +9,46 @@ namespace Unecont.BookScraper.Core.Services;
 
 public static class PageScraper
 {
-    public static async Task<IEnumerable<Book>> ScrapeBooks(
+    public static async Task<List<Book>> ScrapeBooks(
         string firstPageUrl,
+        BookFilters? bookFilters = null,
         ILogger? logger = null
     )
     {
-        logger.Information("Starting book scraping from: {FirstPageUrl}", firstPageUrl);
+        logger?.Information("Starting book scraping from: {FirstPageUrl}", firstPageUrl);
         var allPagesUrls = await GetPagesUrls(firstPageUrl, logger);
-        logger.Information("Found {Count} pages to scrape.", allPagesUrls.Count);
+        logger?.Information("Found {Count} pages to scrape.", allPagesUrls.Count);
         var scrapingTasks = allPagesUrls.Select(url => ScrapePage(url, logger));
         var scrapingResults = await Task.WhenAll(scrapingTasks);
-        logger.Information("Finished scraping all pages.");
-        return scrapingResults.SelectMany(b => b);
+        logger?.Information("Finished scraping all pages.");
+
+        var books = scrapingResults.SelectMany(b => b);
+        var filteredBooks = FilterBooks(books, bookFilters);
+        return filteredBooks;
     }
 
     private static readonly IConfiguration PageScraperConfiguration =
         Configuration.Default.WithDefaultLoader();
 
+    private static List<Book> FilterBooks(IEnumerable<Book> books, BookFilters? bookFilters = null)
+    {
+        if (bookFilters is null)
+        {
+            return books.ToList();
+        }
+
+        return books
+            .Where(b =>
+                (bookFilters.MinPrice is null || b.Price >= bookFilters.MinPrice)
+                && (bookFilters.MaxPrice is null || b.Price <= bookFilters.MaxPrice)
+                && (bookFilters.Rating is null || b.Rating == bookFilters.Rating)
+            )
+            .ToList();
+    }
+
     private static async Task<HashSet<string>> GetPagesUrls(string pageUrl, ILogger? logger = null)
     {
-        logger.Information("Getting all page URLs starting from: {PageUrl}", pageUrl);
+        logger?.Information("Getting all page URLs starting from: {PageUrl}", pageUrl);
         HashSet<string> pagesUrl = [pageUrl];
         using var context = BrowsingContext.New(PageScraperConfiguration);
         using var document = await context.OpenAsync(pageUrl);
@@ -40,19 +60,19 @@ public static class PageScraper
             var absoluteUri = new Uri(baseUri, nextPageLink);
             string nextPageUrl = absoluteUri.ToString();
             pagesUrl.Add(nextPageUrl);
-            logger.Information("Found next page: {NextPageUrl}", nextPageUrl);
+            logger?.Information("Found next page: {NextPageUrl}", nextPageUrl);
 
             using var nextPageDocument = await context.OpenAsync(nextPageUrl);
             nextPageLink = nextPageDocument.QuerySelector("li.next a")?.GetAttribute("href");
         }
 
-        logger.Information("Total pages found: {PagesUrlCount}", pagesUrl.Count);
+        logger?.Information("Total pages found: {PagesUrlCount}", pagesUrl.Count);
         return pagesUrl;
     }
 
     private static async Task<IEnumerable<Book>> ScrapePage(string pageUrl, ILogger? logger = null)
     {
-        logger.Information("Scraping page: {PageUrl}", pageUrl);
+        logger?.Information("Scraping page: {PageUrl}", pageUrl);
         using var context = BrowsingContext.New(PageScraperConfiguration);
         using var document = await context.OpenAsync(pageUrl);
 
@@ -67,7 +87,7 @@ public static class PageScraper
                 int rating = GetRating(productPod);
                 string url = GetUrl(productPod, pageUrl);
 
-                logger.Debug(
+                logger?.Debug(
                     "Parsed book: {Title}, Price: {Price}, Rating: {Rating}, Category: {Category}, Url: {Url}",
                     title,
                     price,
@@ -86,7 +106,7 @@ public static class PageScraper
                 };
             })
             .ToList();
-        logger.Information("Scraped {Count} books from page: {PageUrl}", books.Count, pageUrl);
+        logger?.Information("Scraped {Count} books from page: {PageUrl}", books.Count, pageUrl);
         return books;
     }
 
