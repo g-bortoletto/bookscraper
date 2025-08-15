@@ -49,7 +49,9 @@ public static class PageScraper
     public static string[] BuildCategoriesUrls(string[] categories)
     {
         return ScrapingHelper
-            .CategoryMap.Where(kvp => categories.Contains(kvp.Key))
+            .CategoryMap.Where(kvp =>
+                categories.Select(c => c.ToLowerInvariant()).Contains(kvp.Key.ToLowerInvariant())
+            )
             .Select(kvp =>
                 $"https://books.toscrape.com/catalogue/category/books/{kvp.Value}/index.html"
             )
